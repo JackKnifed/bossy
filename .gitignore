@@ -22,3 +22,8 @@ _testmain.go
 *.exe
 *.test
 *.prof
+
+coverage.out
+cover.out
+c.out
+debug
