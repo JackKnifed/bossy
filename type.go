@@ -108,54 +108,78 @@ func (c *config) setItem(address []string, loc, val interface{}) Error {
 		}
 		loc[address[0]] = val
 	case []interface{}:
-		i, err := strconv.Atoi(address[0])
-		if err != nil {
-			return NewError{Code: ErrBadAddressStructure}
+		switch address[0] {
+		case "":
+			if len(address) > 1 {
+				return NewError{Code: ErrUnimplemented}
+			}
+			loc = append(loc, val)
+		case "-1":
+			if len(address) > 1 {
+				return NewError{Code: ErrUnimplemented}
+			}
+			loc = append([]interface {
+				val
+			}, loc...)
+		case "*":
+			for i := range loc {
+				if len(address) > 1 {
+					if err := c.SetItem(address[1:], loc[i], val); err != nil {
+						return err
+					}
+				} else {
+					loc[i] = val
+				}
+			}
+		default:
+			i, err := strconv.Atoi(address[0])
+			if err != nil {
+				return NewError{Code: ErrBadAddressStructure}
+			}
+			if i < 0 || i > len(loc) {
+				return NewError{Code: ErrBadAddressIndex}
+			}
+
+			if i < len(loc)-1 {
+				if len(address) > 1 {
+					return c.setItem(address[1:], loc[i], val)
+				}
+				loc[i] = val
+			} else {
+				if len(address) > 1 {
+					// TODO determine setItem behavior for slices
+					return NewError{Code: ErrUnimplemented}
+				}
+				loc = append(loc, val)
+			}
 		}
-		// TODO determine setItem behavior for slices
-		if i < 0 || i > len(loc)-1 {
-			return NewError{Code: ErrBadAddressIndex}
-		}
-		if len(address) > 1 {
-			return c.setItem(address[1:], loc[i], val)
-		}
-		loc[i] = val
 	case map[int]interface{}:
 		i, err := strconv.Atoi(address[0])
 		if err != nil {
 			return NewError{Code: ErrBadAddressStructure}
 		}
-		childLoc, ok := loc[i]
-		if !ok {
-			return NewError{Code: ErrBadAddressIndex}
-		}
 		if len(address) > 1 {
-			return c.setItem(address[1:], childLoc, val)
+			return c.setItem(address[1:], loc[i], val)
 		}
 		loc[i] = val
 	case map[bool]interface{}:
 		v := atob(address[0])
-		childLoc, ok := loc[v]
-		if !ok {
-			return NewError{Code: ErrBadAddressIndex}
-		}
 		if len(address) > 1 {
-			return c.setItem(address[1:], childLoc, val)
+			return c.setItem(address[1:], loc[v], val)
 		}
 		loc[i] = val
 	case map[float64]interface{}:
-		i, err := strconv.ParseFloat(address[0], 64)
+		n, err := strconv.ParseFloat(address[0], 64)
 		if err != nil {
 			return NewError{Code: ErrBadAddressStructure}
 		}
-		childLoc, ok := loc[i]
-		if !ok {
-			return NewError{Code: ErrBadAddressIndex}
-		}
 		if len(address) > 1 {
-			return c.setItem(address[1:], childLoc, val)
+			return c.setItem(address[1:], loc[n], val)
 		}
-		loc[i] = val
+		loc[n] = val
+	default:
+		// i need a default case maybe?
+		return NewError{Code: ErrUnsupportedType}
 	}
 	return nil
 }
