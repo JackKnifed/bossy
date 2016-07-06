@@ -183,3 +183,64 @@ func (c *config) setItem(address []string, loc, val interface{}) Error {
 	}
 	return nil
 }
+
+func (c *config) getItem(address []string, loc interface{}) (interface{}, Error) {
+	if len(address) < 1 {
+		return NewError{Code: BadAddressLocation}
+	}
+	switch loc := loc.(type) {
+	case map[string]interface{}:
+		// no conversion needed
+		if len(address) > 1 {
+			return c.getItem(address[1:], loc[address[0]], val)
+		}
+		return loc[address[0]], nil
+	case []interface{}:
+		i, err := strconv.Atoi(address[0])
+		if err != nil {
+			return NewError{Code: ErrBadAddressStructure}
+		}
+		if i < 0 || i > len(loc) {
+			return NewError{Code: ErrBadAddressIndex}
+		}
+		if len(address) > 1 {
+			return c.getItem(address[1:], loc[i], val)
+		}
+		return loc[i]
+	case map[int]interface{}:
+		i, err := strconv.Atoi(address[0])
+		if err != nil {
+			return nil, NewError{Code: ErrBadAddressStructure}
+		}
+		if _, exists := loc[i]; !exists {
+			return nil, NewErr{Code: ErrBadAddressIndex}
+		}
+		if len(address) > 1 {
+			return c.getItem(address[1:], loc[i], val), nil
+		}
+		return loc[i], nil
+	case map[bool]interface{}:
+		v := atob(address[0])
+		if _, exists := loc[i]; !exists {
+			return nil, NewErr{Code: ErrBadAddressIndex}
+		}
+		if len(address) > 1 {
+			return c.getItem(address[1:], loc[v], val)
+		}
+		return loc[i], nil
+	case map[float64]interface{}:
+		n, err := strconv.ParseFloat(address[0], 64)
+		if err != nil {
+			return NewError{Code: ErrBadAddressStructure}
+		}
+		if _, exists := loc[i]; !exists {
+			return nil, NewErr{Code: ErrBadAddressIndex}
+		}
+		if len(address) > 1 {
+			return c.setItem(address[1:], loc[n], val)
+		}
+		return loc[n], nil
+		loc[n] = val
+	}
+	return nil, NewError{Code: ErrUnsupportedType}
+}
