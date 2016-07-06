@@ -2,13 +2,22 @@ package bossy
 
 import "strconv"
 
-type config struct {
-	// LoadJSON() Error
-	// Export()
+type propagation struct {
+	parentNode []string
+	childNode  []string
 }
 
-func (c *config) Export() {
+type restriction struct {
+	address     []string
+	restriction func 
+}
 
+type config struct {
+	structure    interface{}
+	data         interface{}
+	defaults     interface{}
+	limits []restriction
+	propagation  []propagation
 }
 
 func atob(in string) bool {
